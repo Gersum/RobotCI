@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    environment {
+        VENV = 'robot_env'
+    }
+
+    stages {
+        stage('Prepare') {
+            steps {
+                echo 'Setting up virtual environment and dependencies...'
+                sh 'python3 -m venv $VENV'
+                sh './$VENV/bin/pip install -r requirements.txt'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                echo 'Running Robot Framework tests...'
+                sh './$VENV/bin/robot -d results tests/'
+            }
+        }
+
+        stage('Publish Reports') {
+            steps {
+                echo 'Publishing HTML reports...'
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'results',
+                    reportFiles: 'log.html, report.html, output.xml',
+                    reportName: 'Robot Framework Reports'
+                ])
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up...'
+        }
+    }
+}
